@@ -41,7 +41,7 @@ async function main() {
   await portfolioManager.addOrder(
     envConfig.mainnet.tokens.link,
     OrderType.BUY,
-    ethers.utils.parseUnits("6.78", 8),
+    ethers.utils.parseUnits("6.8", 8),
     parseEther("0.1")
   );
 

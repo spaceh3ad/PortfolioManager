@@ -21,8 +21,8 @@ contract PortfolioManager is Objects {
 
     /// @notice store assets prices
     enum OrderType {
-        SELL,
-        BUY
+        BUY,
+        SELL
     }
 
     /// @param token `address` of token ex. 0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2 (WETH)
@@ -70,11 +70,10 @@ contract PortfolioManager is Objects {
             address asset = assetsInfo[i].asset;
             int256 assetPrice = assetsInfo[i].price;
             for (uint256 j = 0; j < orders.length; j++) {
-                console.log(asset, orders[j].asset);
                 if (asset == orders[j].asset) {
-                    console.log("ELDO");
                     int256 orderPrice = orders[j].price;
                     OrderType orderType = orders[j].orderType;
+
                     if (
                         (orderType == OrderType.SELL &&
                             assetPrice >= orderPrice) ||
@@ -104,19 +103,12 @@ contract PortfolioManager is Objects {
             for (uint256 j = 0; j < orders.length; j++) {
                 if (asset == orders[j].asset) {
                     int256 orderPrice = orders[j].price;
-                    console.log(
-                        "assetPrice: ",
-                        uint256(assetPrice),
-                        "orderPrice: ",
-                        uint256(orderPrice)
-                    );
                     OrderType orderType = orders[j].orderType;
                     if (
                         (orderType == OrderType.SELL &&
                             assetPrice >= orderPrice) ||
                         (orderType == OrderType.BUY && assetPrice <= orderPrice)
                     ) {
-                        console.log("orderId: ", j);
                         eligibleOrdersIds[pointer] = j;
                         pointer++;
                     }
