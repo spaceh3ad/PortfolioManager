@@ -3,23 +3,45 @@
 //
 // When running the script with `npx hardhat run <script>` you'll find the Hardhat
 // Runtime Environment's members available in the global scope.
-import { parseEther } from "ethers/lib/utils";
-import { ethers, network } from "hardhat";
+import { BigNumber } from "ethers";
+import { parseEther, parseUnits } from "ethers/lib/utils";
+import { ethers } from "hardhat";
 
 import { envConfig } from "../config/env";
 import {
   PortfolioManager__factory,
   PriceConsumerV3,
   PriceConsumerV3__factory,
-} from "../typechain";
+  Uniswap__factory,
+  IERC20,
+  IWETH,
+  AggregatorV3Interface,
+} from "../typechain/";
 
 enum OrderType {
   BUY,
   SELL,
 }
 
+async function getOrderPrice(priceConsumer: PriceConsumerV3, asset: string) {
+  const price = +(await priceConsumer.getLatestPrice(asset)) - 100;
+  return price;
+}
+
 async function main() {
   const [deployer] = await ethers.getSigners();
+
+  const weth = await ethers.getContractAt(
+    "IWETH",
+    envConfig.mainnet.tokens.weth
+  );
+
+  const link = await ethers.getContractAt(
+    "IERC20",
+    envConfig.mainnet.tokens.link
+  );
+
+  await weth.deposit(parseEther("10"));
 
   const portfolioManager = await new PortfolioManager__factory(deployer).deploy(
     [
@@ -38,29 +60,53 @@ async function main() {
     await portfolioManager.priceConsumer()
   );
 
+  const wethPrice = await getOrderPrice(
+    priceConsumer,
+    envConfig.mainnet.chainlink.datafeeds.weth
+  );
+
+  await weth.approve(priceConsumer.address, parseEther("0.1"));
+
+  const linkPrice = await getOrderPrice(
+    priceConsumer,
+    envConfig.mainnet.chainlink.datafeeds.weth
+  );
+
+  await link.approve(priceConsumer.address, parseEther("0.1"));
+
+  const uniswap = await new Uniswap__factory(deployer).deploy(
+    envConfig.mainnet.uniswap.SwapRouter
+  );
+
   await portfolioManager.addOrder(
     envConfig.mainnet.tokens.link,
     OrderType.BUY,
-    ethers.utils.parseUnits("6.78", 8),
+    linkPrice,
     parseEther("0.1")
   );
 
   await portfolioManager.addOrder(
     envConfig.mainnet.tokens.weth,
     OrderType.BUY,
-    ethers.utils.parseUnits("1600", 8),
+    wethPrice,
     parseEther("0.1")
   );
 
-  // const orders = await portfolioManager.getOrders();
+  const order = await portfolioManager.getOrders();
   const orders = await portfolioManager.getEligibleOrders();
-  console.log(orders);
-  // const Greeter = await ethers.getContractFactory("Greeter");
-  // const greeter = await Greeter.deploy("Hello, Hardhat!");
+  console.log("Eligible orders:", orders);
 
-  // await greeter.deployed();
-
-  // console.log("Greeter deployed to:", greeter.address);
+  for (let index = 0; index < orders.length; index++) {
+    const element = parseInt(orders[index].toString());
+    const currentOrder = await order[element];
+    console.log("no jest wjazd");
+    await uniswap.swapExactInputSingle(
+      currentOrder.amount,
+      envConfig.mainnet.tokens.weth,
+      currentOrder.asset
+    );
+  }
+  console.log("eloo");
 }
 
 // We recommend this pattern to be able to use async/await everywhere

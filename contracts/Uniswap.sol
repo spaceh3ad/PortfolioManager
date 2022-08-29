@@ -4,8 +4,9 @@ pragma abicoder v2;
 
 import "@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol";
 import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
+import "hardhat/console.sol";
 
-contract SwapExamples {
+contract Uniswap {
     // https://docs.uniswap.org/protocol/guides/swaps/single-swaps#a-complete-single-swap-contract
 
     ISwapRouter public immutable swapRouter;
@@ -50,5 +51,6 @@ contract SwapExamples {
             });
 
         amountOut = swapRouter.exactInputSingle(params);
+        console.log("to poszedl swap mordo");
     }
 }

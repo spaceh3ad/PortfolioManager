@@ -57,12 +57,40 @@ contract PortfolioManager is Objects {
         );
     }
 
+    function getOrderRange(AssetInfo[] memory assetsInfo)
+        internal
+        view
+        returns (uint256)
+    {
+        uint256 counter = 0;
+        for (uint256 i = 0; i < assetsInfo.length; i++) {
+            address asset = assetsInfo[i].asset;
+            int256 assetPrice = assetsInfo[i].price;
+            for (uint256 j = 0; j < orders.length; j++) {
+                if (asset == orders[j].asset) {
+                    int256 orderPrice = orders[j].price;
+                    OrderType orderType = orders[j].orderType;
+
+                    if (
+                        (orderType == OrderType.SELL &&
+                            assetPrice >= orderPrice) ||
+                        (orderType == OrderType.BUY && assetPrice <= orderPrice)
+                    ) {
+                        counter++;
+                    }
+                }
+            }
+        }
+        return counter;
+    }
+
     /// @notice returns `EligibleOrders[]` orders
     function getEligibleOrders() public view returns (uint256[] memory) {
         /// get prices for tracking assets
         AssetInfo[] memory assetsInfo = priceConsumer.batchGetter();
-        uint256[] memory eligibleOrdersIds;
-
+        uint256[] memory eligibleOrdersIds = new uint256[](
+            getOrderRange(assetsInfo)
+        );
         uint256 pointer = 0;
 
         for (uint256 i = 0; i < assetsInfo.length; i++) {
@@ -71,6 +99,7 @@ contract PortfolioManager is Objects {
             for (uint256 j = 0; j < orders.length; j++) {
                 if (asset == orders[j].asset) {
                     int256 orderPrice = orders[j].price;
+                    console.log("asset: ", asset);
                     console.log(
                         "assetPrice: ",
                         uint256(assetPrice),

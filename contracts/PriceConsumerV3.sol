@@ -42,6 +42,10 @@ contract PriceConsumerV3 is Objects {
         return assetsInfo;
     }
 
+    function decimals(AggregatorV3Interface _feed) public view returns (uint8) {
+        return _feed.decimals();
+    }
+
     /**
      * Returns the latest price
      */
