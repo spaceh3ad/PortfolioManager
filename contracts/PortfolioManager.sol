@@ -18,8 +18,8 @@ contract PortfolioManager is Objects {
 
     /// @notice store assets prices
     enum OrderType {
-        SELL,
-        BUY
+        BUY,
+        SELL
     }
 
     /// @param token `address` of token ex. 0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2 (WETH)
