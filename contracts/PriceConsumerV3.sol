@@ -10,6 +10,8 @@ contract PriceConsumerV3 is Objects {
     AggregatorV3Interface[] public priceFeeds;
 
     /// @dev The assets that this consumer is tracking.
+
+    // TODO fix mapping
     mapping(address => address) public assetToFeedMapping;
 
     /// @notice save needed pirce feeds addresses

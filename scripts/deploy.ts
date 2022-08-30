@@ -6,6 +6,7 @@
 import { BigNumber } from "ethers";
 import { parseEther, parseUnits } from "ethers/lib/utils";
 import { ethers } from "hardhat";
+import fs from "fs";
 
 import { envConfig } from "../config/env";
 import {
@@ -36,6 +37,9 @@ async function main() {
     envConfig.mainnet.tokens.weth
   );
 
+  // get some WETH
+  await weth.deposit({ value: parseEther("10") });
+
   const link = await ethers.getContractAt(
     "IERC20",
     envConfig.mainnet.tokens.link
@@ -52,7 +56,8 @@ async function main() {
       envConfig.mainnet.tokens.link,
       envConfig.mainnet.tokens.btc,
     ],
-    keeper
+    envConfig.mainnet.uniswap.SwapRouter,
+    keeper.address
   );
 
   const priceConsumer = await new PriceConsumerV3__factory(deployer).attach(
@@ -64,19 +69,16 @@ async function main() {
     envConfig.mainnet.chainlink.datafeeds.weth
   );
 
-  await weth.approve(priceConsumer.address, parseEther("0.1"));
-
   const linkPrice = await getOrderPrice(
     priceConsumer,
     envConfig.mainnet.chainlink.datafeeds.weth
   );
 
-  await link.approve(priceConsumer.address, parseEther("0.1"));
-
   const uniswap = await new Uniswap__factory(deployer).deploy(
     envConfig.mainnet.uniswap.SwapRouter
   );
 
+  await link.approve(priceConsumer.address, parseEther("0.1"));
   await portfolioManager.addOrder(
     envConfig.mainnet.tokens.link,
     OrderType.BUY,
@@ -84,6 +86,7 @@ async function main() {
     parseEther("0.1")
   );
 
+  await weth.approve(priceConsumer.address, parseEther("0.1"));
   await portfolioManager.addOrder(
     envConfig.mainnet.tokens.weth,
     OrderType.BUY,
@@ -95,17 +98,29 @@ async function main() {
   const orders = await portfolioManager.getEligibleOrders();
   console.log("Eligible orders:", orders);
 
-  for (let index = 0; index < orders.length; index++) {
-    const element = parseInt(orders[index].toString());
-    const currentOrder = await order[element];
-    console.log("no jest wjazd");
-    await uniswap.swapExactInputSingle(
-      currentOrder.amount,
-      envConfig.mainnet.tokens.weth,
-      currentOrder.asset
-    );
-  }
-  console.log("eloo");
+  const portfolioManager_Keeper = PortfolioManager__factory.connect(
+    portfolioManager.address,
+    keeper
+  );
+
+  await portfolioManager_Keeper.executeOrders(orders);
+  console.log("Git");
+
+  let contracts = {
+    portfolioManager: portfolioManager,
+    priceConsumer: priceConsumer,
+    uniswap: uniswap,
+  };
+
+  writeToFile(contracts);
+}
+
+function writeToFile(contracts: Object) {
+  let prettyJson = JSON.stringify(contracts, null, 2);
+  fs.writeFileSync(__dirname + "/config/contracts.json", prettyJson, {
+    encoding: null,
+  });
+  console.log(prettyJson);
 }
 
 // We recommend this pattern to be able to use async/await everywhere
