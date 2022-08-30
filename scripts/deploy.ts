@@ -29,7 +29,7 @@ async function getOrderPrice(priceConsumer: PriceConsumerV3, asset: string) {
 }
 
 async function main() {
-  const [deployer] = await ethers.getSigners();
+  const [deployer, keeper] = await ethers.getSigners();
 
   const weth = await ethers.getContractAt(
     "IWETH",
@@ -41,8 +41,6 @@ async function main() {
     envConfig.mainnet.tokens.link
   );
 
-  await weth.deposit(parseEther("10"));
-
   const portfolioManager = await new PortfolioManager__factory(deployer).deploy(
     [
       envConfig.mainnet.chainlink.datafeeds.weth,
@@ -53,7 +51,8 @@ async function main() {
       envConfig.mainnet.tokens.weth,
       envConfig.mainnet.tokens.link,
       envConfig.mainnet.tokens.btc,
-    ]
+    ],
+    keeper
   );
 
   const priceConsumer = await new PriceConsumerV3__factory(deployer).attach(

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-pragma solidity =0.7.6;
+pragma solidity 0.8.16;
 pragma abicoder v2;
 
 import "@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol";
@@ -14,8 +14,8 @@ contract Uniswap {
     // For this example, we will set the pool fee to 0.3%.
     uint24 public constant poolFee = 3000;
 
-    constructor(ISwapRouter _swapRouter) {
-        swapRouter = _swapRouter;
+    constructor(address _swapRouter) {
+        swapRouter = ISwapRouter(_swapRouter);
     }
 
     /// @notice swapExactInputSingle swaps a fixed amount of tokenIn for a maximum possible amount of tokenOut

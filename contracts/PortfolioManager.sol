@@ -2,19 +2,28 @@
 pragma solidity 0.8.16;
 pragma experimental ABIEncoderV2;
 
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
+
 import {PriceConsumerV3} from "./PriceConsumerV3.sol";
 import {Objects} from "./Objects.sol";
+import {Uniswap} from "./Uniswap.sol";
 
 import "hardhat/console.sol";
 
 /// @title PortfoliManager order executor
 /// @author spaceh3ad
 /// @notice Contract allows to add your tokens and submit orders for them
-contract PortfolioManager is Objects {
+contract PortfolioManager is Objects, AccessControl {
     /// @notice store which assets
     Order[] internal orders;
 
     PriceConsumerV3 public priceConsumer;
+    Uniswap public uniswap;
+
+    IERC20 public weth = IERC20(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2);
+
+    bytes32 public constant KEEPER_ROLE = keccak256("KEEPER_ROLE");
 
     /// @notice store assets prices
     enum OrderType {
@@ -30,8 +39,16 @@ contract PortfolioManager is Objects {
         int256 amount;
     }
 
-    constructor(address[] memory _priceFeeds, address[] memory _assets) {
+    constructor(
+        address[] memory _priceFeeds,
+        address[] memory _assets,
+        address swapRouter,
+        address _keeper
+    ) {
         priceConsumer = new PriceConsumerV3(_priceFeeds, _assets);
+        uniswap = new Uniswap(swapRouter);
+        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _grantRole(KEEPER_ROLE, _keeper);
     }
 
     function getOrders() public view returns (Order[] memory) {
@@ -44,8 +61,32 @@ contract PortfolioManager is Objects {
         int256 _price,
         int256 _amount
     ) public {
-        // TODO: check if asset is in the list of assets
-        // TODO: if SELL order then check if user has asset
+        require(
+            priceConsumer.assetToFeedMapping(_asset) != address(0),
+            "Asset not supported"
+        );
+        if (_orderType == OrderType.SELL) {
+            require(
+                int256(IERC20(_asset).balanceOf(msg.sender)) >= _amount,
+                "Wrong amount"
+            );
+            require(
+                IERC20(_asset).transferFrom(
+                    msg.sender,
+                    address(this),
+                    uint256(_amount)
+                ),
+                "Asset SFT failed"
+            );
+        }
+        require(
+            IERC20(weth).transferFrom(
+                msg.sender,
+                address(this),
+                uint256(_amount)
+            ),
+            "WETH SFT failed"
+        );
 
         orders.push(
             Order({
@@ -120,5 +161,29 @@ contract PortfolioManager is Objects {
             }
         }
         return eligibleOrdersIds;
+    }
+
+    function executeOrders(uint256[] memory _orders) external {
+        require(hasRole(KEEPER_ROLE, msg.sender), "Only keeper");
+        for (uint256 i = 0; i < _orders.length; i++) {
+            address tokenIn;
+            address tokenOut;
+            if (orders[i].orderType == OrderType.BUY) {
+                tokenIn = address(weth);
+                tokenOut = orders[i].asset;
+            } else {
+                tokenIn = orders[i].asset;
+                tokenOut = address(weth);
+            }
+            IERC20(tokenIn).approve(
+                address(uniswap),
+                uint256(orders[i].amount)
+            );
+            uniswap.swapExactInputSingle(
+                uint256(orders[i].amount),
+                tokenIn,
+                tokenOut
+            );
+        }
     }
 }
