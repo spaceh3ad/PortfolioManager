@@ -17,9 +17,10 @@ contract PriceConsumerV3 is Objects {
     /// @notice save needed pirce feeds addresses
     constructor(address[] memory _priceFeeds, address[] memory _assets) {
         require(_priceFeeds.length == _assets.length, "Data length must match");
-        for (uint256 i = 0; i < _priceFeeds.length; i++) {
-            priceFeeds.push(AggregatorV3Interface(_priceFeeds[i]));
-            assetToFeedMapping[_priceFeeds[i]] = _assets[i];
+        for (uint256 i = 0; i < _assets.length; i++) {
+            priceFeeds.push(AggregatorV3Interface(_assets[i]));
+            assetToFeedMapping[_assets[i]] = _priceFeeds[i];
+            console.log(_assets[i]);
         }
     }
 

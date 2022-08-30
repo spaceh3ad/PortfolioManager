@@ -78,7 +78,7 @@ async function main() {
     envConfig.mainnet.uniswap.SwapRouter
   );
 
-  await link.approve(priceConsumer.address, parseEther("0.1"));
+  await link.approve(portfolioManager.address, parseEther("0.1"));
   await portfolioManager.addOrder(
     envConfig.mainnet.tokens.link,
     OrderType.BUY,
@@ -86,7 +86,7 @@ async function main() {
     parseEther("0.1")
   );
 
-  await weth.approve(priceConsumer.address, parseEther("0.1"));
+  await weth.approve(portfolioManager.address, parseEther("0.1"));
   await portfolioManager.addOrder(
     envConfig.mainnet.tokens.weth,
     OrderType.BUY,
@@ -112,6 +112,7 @@ async function main() {
     uniswap: uniswap,
   };
 
+  console.log("odbiór");
   writeToFile(contracts);
 }
 

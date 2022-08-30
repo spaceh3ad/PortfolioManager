@@ -8,7 +8,7 @@ import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 import {PriceConsumerV3} from "./PriceConsumerV3.sol";
 import {Objects} from "./Objects.sol";
 import {Uniswap} from "./Uniswap.sol";
-
+//
 import "hardhat/console.sol";
 
 /// @title PortfoliManager order executor
@@ -36,7 +36,8 @@ contract PortfolioManager is Objects, AccessControl {
         address asset;
         OrderType orderType;
         int256 price;
-        int256 amount;
+        uint256 amount;
+        address owner;
     }
 
     constructor(
@@ -59,41 +60,27 @@ contract PortfolioManager is Objects, AccessControl {
         address _asset,
         OrderType _orderType,
         int256 _price,
-        int256 _amount
+        uint256 _amount
     ) public {
         require(
             priceConsumer.assetToFeedMapping(_asset) != address(0),
             "Asset not supported"
         );
-        if (_orderType == OrderType.SELL) {
-            require(
-                int256(IERC20(_asset).balanceOf(msg.sender)) >= _amount,
-                "Wrong amount"
-            );
-            require(
-                IERC20(_asset).transferFrom(
-                    msg.sender,
-                    address(this),
-                    uint256(_amount)
-                ),
-                "Asset SFT failed"
-            );
-        }
-        require(
-            IERC20(weth).transferFrom(
-                msg.sender,
-                address(this),
-                uint256(_amount)
-            ),
-            "WETH SFT failed"
+        console.log("asset: ", _asset);
+        console.log(
+            IERC20(_asset).allowance(msg.sender, address(this)),
+            _amount
         );
+
+        // IERC20(_asset).transferFrom(msg.sender, address(this), _amount);
 
         orders.push(
             Order({
                 asset: _asset,
                 orderType: _orderType,
                 price: _price,
-                amount: _amount
+                amount: _amount,
+                owner: msg.sender
             })
         );
     }
