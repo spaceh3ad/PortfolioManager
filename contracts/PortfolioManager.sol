@@ -136,13 +136,7 @@ contract PortfolioManager is Objects, AccessControl, Uniswap {
             for (uint256 j = 0; j < orders.length; j++) {
                 if (asset == orders[j].asset) {
                     int256 orderPrice = orders[j].price;
-                    console.log("asset: ", asset);
-                    console.log(
-                        "assetPrice: ",
-                        uint256(assetPrice),
-                        "orderPrice: ",
-                        uint256(orderPrice)
-                    );
+
                     OrderType orderType = orders[j].orderType;
 
                     if (
@@ -150,7 +144,6 @@ contract PortfolioManager is Objects, AccessControl, Uniswap {
                             assetPrice >= orderPrice) ||
                         (orderType == OrderType.BUY && assetPrice <= orderPrice)
                     ) {
-                        console.log("orderId: ", j);
                         eligibleOrdersIds[pointer] = j;
                         pointer++;
                     }
