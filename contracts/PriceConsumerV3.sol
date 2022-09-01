@@ -6,20 +6,21 @@ import {Objects} from "./Objects.sol";
 import "hardhat/console.sol";
 
 contract PriceConsumerV3 is Objects {
-    /// @dev The price feed contract that this consumer uses to get the price of the assets.
-    AggregatorV3Interface[] public priceFeeds;
+    address[] public supportedAssets;
 
     /// @dev The assets that this consumer is tracking.
 
     // TODO fix mapping
-    mapping(address => address) public assetToFeedMapping;
+    mapping(address => AggregatorV3Interface) public assetToFeedMapping;
 
     /// @notice save needed pirce feeds addresses
     constructor(address[] memory _priceFeeds, address[] memory _assets) {
         require(_priceFeeds.length == _assets.length, "Data length must match");
         for (uint256 i = 0; i < _assets.length; i++) {
-            priceFeeds.push(AggregatorV3Interface(_assets[i]));
-            assetToFeedMapping[_assets[i]] = _priceFeeds[i];
+            supportedAssets.push(_assets[i]);
+            assetToFeedMapping[_assets[i]] = AggregatorV3Interface(
+                _priceFeeds[i]
+            );
             console.log(_assets[i]);
         }
     }
@@ -28,20 +29,32 @@ contract PriceConsumerV3 is Objects {
     /// @param _feed address of price feed for binded token
     /// @param _asset address of token
     function addFeed(AggregatorV3Interface _feed, address _asset) internal {
-        assetToFeedMapping[address(_feed)] = _asset;
-        priceFeeds.push(_feed);
+        assetToFeedMapping[_asset] = AggregatorV3Interface(_feed);
+        supportedAssets.push(_asset);
     }
 
     /// @notice return array of assets info (asset address, price)
     function batchGetter() public view returns (AssetInfo[] memory) {
-        AssetInfo[] memory assetsInfo = new AssetInfo[](priceFeeds.length);
+        AssetInfo[] memory assetsInfo = new AssetInfo[](supportedAssets.length);
 
-        for (uint256 i = 0; i < priceFeeds.length; i++) {
+        for (uint256 i = 0; i < supportedAssets.length; i++) {
+            console.log("supportedAsset: ", supportedAssets[i]);
+            console.log(
+                "assetToFeedMapping: ",
+                address(assetToFeedMapping[supportedAssets[i]])
+            );
             assetsInfo[i] = AssetInfo({
-                asset: assetToFeedMapping[address(priceFeeds[i])],
-                price: getLatestPrice(priceFeeds[i])
+                asset: supportedAssets[i],
+                price: getLatestPrice(
+                    AggregatorV3Interface(
+                        assetToFeedMapping[supportedAssets[i]]
+                    )
+                )
             });
+            console.log(assetsInfo[i].asset);
         }
+        console.log(assetsInfo.length);
+        require(assetsInfo.length > 0, "Feed returned no data");
         return assetsInfo;
     }
 
@@ -57,7 +70,9 @@ contract PriceConsumerV3 is Objects {
         view
         returns (int256)
     {
+        console.log(address(_feed));
         (, int256 price, , , ) = _feed.latestRoundData();
+        console.logInt(price);
         return price;
     }
 }

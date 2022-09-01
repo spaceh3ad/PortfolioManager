@@ -28,23 +28,15 @@ contract Uniswap {
         uint256 amountIn,
         address tokenIn,
         address tokenOut
-    ) external returns (uint256 amountOut) {
-        TransferHelper.safeTransferFrom(
-            tokenIn,
-            msg.sender,
-            address(this),
-            amountIn
-        );
-
+    ) public returns (uint256 amountOut) {
         TransferHelper.safeApprove(tokenIn, address(swapRouter), amountIn);
-
         ISwapRouter.ExactInputSingleParams memory params = ISwapRouter
             .ExactInputSingleParams({
                 tokenIn: tokenIn,
                 tokenOut: tokenOut,
                 fee: poolFee,
-                recipient: msg.sender,
-                deadline: block.timestamp,
+                recipient: address(this),
+                deadline: block.timestamp + 100,
                 amountIn: amountIn,
                 amountOutMinimum: 0,
                 sqrtPriceLimitX96: 0

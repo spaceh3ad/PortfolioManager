@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.16;
-pragma experimental ABIEncoderV2;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
@@ -14,14 +13,14 @@ import "hardhat/console.sol";
 /// @title PortfoliManager order executor
 /// @author spaceh3ad
 /// @notice Contract allows to add your tokens and submit orders for them
-contract PortfolioManager is Objects, AccessControl {
+contract PortfolioManager is Objects, AccessControl, Uniswap {
     /// @notice store which assets
     Order[] internal orders;
 
     PriceConsumerV3 public priceConsumer;
-    Uniswap public uniswap;
+    // Uniswap public uniswap;
 
-    IERC20 public weth = IERC20(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2);
+    address public weth = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
 
     bytes32 public constant KEEPER_ROLE = keccak256("KEEPER_ROLE");
 
@@ -45,9 +44,8 @@ contract PortfolioManager is Objects, AccessControl {
         address[] memory _assets,
         address swapRouter,
         address _keeper
-    ) {
+    ) Uniswap(swapRouter) {
         priceConsumer = new PriceConsumerV3(_priceFeeds, _assets);
-        uniswap = new Uniswap(swapRouter);
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(KEEPER_ROLE, _keeper);
     }
@@ -61,18 +59,29 @@ contract PortfolioManager is Objects, AccessControl {
         OrderType _orderType,
         int256 _price,
         uint256 _amount
-    ) public {
+    ) external {
         require(
-            priceConsumer.assetToFeedMapping(_asset) != address(0),
+            address(priceConsumer.assetToFeedMapping(_asset)) != address(0),
             "Asset not supported"
         );
-        console.log("asset: ", _asset);
-        console.log(
-            IERC20(_asset).allowance(msg.sender, address(this)),
+
+        address assetToCharge = _orderType == OrderType.BUY ? weth : _asset;
+
+        console.log(IERC20(assetToCharge).allowance(msg.sender, address(this)));
+
+        require(
+            IERC20(assetToCharge).allowance(msg.sender, address(this)) >=
+                _amount,
+            "Not allowance"
+        );
+
+        bool success = IERC20(assetToCharge).transferFrom(
+            msg.sender,
+            address(this),
             _amount
         );
 
-        // IERC20(_asset).transferFrom(msg.sender, address(this), _amount);
+        require(success);
 
         orders.push(
             Order({
@@ -109,6 +118,7 @@ contract PortfolioManager is Objects, AccessControl {
                 }
             }
         }
+        console.log("git");
         return counter;
     }
 
@@ -120,7 +130,6 @@ contract PortfolioManager is Objects, AccessControl {
             getOrderRange(assetsInfo)
         );
         uint256 pointer = 0;
-
         for (uint256 i = 0; i < assetsInfo.length; i++) {
             address asset = assetsInfo[i].asset;
             int256 assetPrice = assetsInfo[i].price;
@@ -135,6 +144,7 @@ contract PortfolioManager is Objects, AccessControl {
                         uint256(orderPrice)
                     );
                     OrderType orderType = orders[j].orderType;
+
                     if (
                         (orderType == OrderType.SELL &&
                             assetPrice >= orderPrice) ||
@@ -151,26 +161,24 @@ contract PortfolioManager is Objects, AccessControl {
     }
 
     function executeOrders(uint256[] memory _orders) external {
+        require(_orders.length != 0);
         require(hasRole(KEEPER_ROLE, msg.sender), "Only keeper");
         for (uint256 i = 0; i < _orders.length; i++) {
             address tokenIn;
             address tokenOut;
+            console.log(uint256(orders[i].orderType));
+            console.log(orders[i].asset);
+
             if (orders[i].orderType == OrderType.BUY) {
-                tokenIn = address(weth);
+                tokenIn = weth;
                 tokenOut = orders[i].asset;
             } else {
                 tokenIn = orders[i].asset;
-                tokenOut = address(weth);
+                tokenOut = weth;
             }
-            IERC20(tokenIn).approve(
-                address(uniswap),
-                uint256(orders[i].amount)
-            );
-            uniswap.swapExactInputSingle(
-                uint256(orders[i].amount),
-                tokenIn,
-                tokenOut
-            );
+            console.log(tokenIn, tokenOut);
+
+            swapExactInputSingle(uint256(orders[i].amount), tokenIn, tokenOut);
         }
     }
 }
