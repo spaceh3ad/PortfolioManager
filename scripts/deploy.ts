@@ -3,8 +3,7 @@
 //
 // When running the script with `npx hardhat run <script>` you'll find the Hardhat
 // Runtime Environment's members available in the global scope.
-import { BigNumber } from "ethers";
-import { parseEther, parseUnits } from "ethers/lib/utils";
+import { parseEther } from "ethers/lib/utils";
 import { ethers } from "hardhat";
 import fs from "fs";
 
@@ -71,12 +70,6 @@ async function main() {
     await portfolioManager.priceConsumer()
   );
 
-  // const wethPrice = await getOrderPrice(
-  //   priceConsumer,
-  //   envConfig.mainnet.chainlink.datafeeds.weth,
-  //   OrderType.BUY
-  // );
-
   const linkPrice = await getOrderPrice(
     priceConsumer,
     envConfig.mainnet.chainlink.datafeeds.weth,
@@ -105,21 +98,6 @@ async function main() {
     parseEther("0.1")
   );
 
-  // await portfolioManager.addOrder(
-  //   envConfig.mainnet.tokens.weth,
-  //   OrderType.BUY,
-  //   wethPrice,
-  //   parseEther("0.1")
-  // );
-
-  // console.log(
-  //   "Added order: ",
-  //   envConfig.mainnet.tokens.weth,
-  //   OrderType.BUY,
-  //   wethPrice,
-  //   parseEther("0.1")
-  // );
-
   const orders = await portfolioManager.getEligibleOrders();
   console.log("Eligible orders:", orders);
 
@@ -135,6 +113,13 @@ async function main() {
     priceConsumer: priceConsumer.address,
     uniswap: uniswap.address,
   };
+
+  await portfolioManager.addOrder(
+    envConfig.mainnet.tokens.weth,
+    OrderType.SELL,
+    linkPrice,
+    parseEther("0.1")
+  );
 
   writeToFile(contracts);
   console.log("Wrote contracts:", contracts);

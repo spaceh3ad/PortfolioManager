@@ -24,6 +24,8 @@ contract PortfolioManager is Objects, AccessControl, Uniswap {
 
     bytes32 public constant KEEPER_ROLE = keccak256("KEEPER_ROLE");
 
+    event OrderAdded(address indexed _asset, int256 price);
+
     /// @notice store assets prices
     enum OrderType {
         BUY,
@@ -48,10 +50,6 @@ contract PortfolioManager is Objects, AccessControl, Uniswap {
         priceConsumer = new PriceConsumerV3(_priceFeeds, _assets);
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(KEEPER_ROLE, _keeper);
-    }
-
-    function getOrders() public view returns (Order[] memory) {
-        return orders;
     }
 
     function addOrder(
@@ -92,6 +90,8 @@ contract PortfolioManager is Objects, AccessControl, Uniswap {
                 owner: msg.sender
             })
         );
+
+        emit OrderAdded(_asset, _price);
     }
 
     function getOrderRange(AssetInfo[] memory assetsInfo)
