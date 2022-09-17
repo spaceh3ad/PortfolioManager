@@ -1,19 +1,109 @@
-import { expect } from "chai";
 import { ethers } from "hardhat";
+import { parseEther } from "ethers/lib/utils";
 
-describe("Greeter", function () {
-  it("Should return the new greeting once it's changed", async function () {
-    const Greeter = await ethers.getContractFactory("Greeter");
-    const greeter = await Greeter.deploy("Hello, world!");
-    await greeter.deployed();
+import { envConfig } from "../config/env";
+import {
+  PortfolioManager,
+  PortfolioManager__factory,
+  PriceConsumerV3,
+  PriceConsumerV3__factory,
+  IWETH,
+  IERC20,
+  IWETH__factory,
+} from "../typechain/";
 
-    expect(await greeter.greet()).to.equal("Hello, world!");
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-with-address";
 
-    const setGreetingTx = await greeter.setGreeting("Hola, mundo!");
+import { getOrderPrice, OrderType } from "../scripts/helper";
 
-    // wait until the transaction is mined
-    await setGreetingTx.wait();
+import chai from "chai";
+import { BigNumber } from "ethers";
+const { expect } = chai;
 
-    expect(await greeter.greet()).to.equal("Hola, mundo!");
+describe("PortfolioManager", function () {
+  let deployer: SignerWithAddress;
+  let keeper: SignerWithAddress;
+
+  let portfolioManager: PortfolioManager;
+  let portfolioManager_Keeper: PortfolioManager;
+
+  let priceConsumer: PriceConsumerV3;
+  let weth: IWETH;
+  let link: IERC20;
+
+  beforeEach(async () => {
+    [deployer, keeper] = await ethers.getSigners();
+
+    portfolioManager = await new PortfolioManager__factory(deployer).deploy(
+      [
+        envConfig.mainnet.chainlink.datafeeds.weth,
+        envConfig.mainnet.chainlink.datafeeds.link,
+        envConfig.mainnet.chainlink.datafeeds.btc,
+      ],
+      [
+        envConfig.mainnet.tokens.weth,
+        envConfig.mainnet.tokens.link,
+        envConfig.mainnet.tokens.btc,
+      ],
+      envConfig.mainnet.uniswap.SwapRouter,
+      keeper.address
+    );
+
+    priceConsumer = await new PriceConsumerV3__factory(deployer).attach(
+      await portfolioManager.priceConsumer()
+    );
+
+    weth = await ethers.getContractAt("IWETH", envConfig.mainnet.tokens.weth);
+    await weth.deposit({ value: parseEther("1") });
+
+    link = await ethers.getContractAt("IERC20", envConfig.mainnet.tokens.link);
+
+    portfolioManager_Keeper = PortfolioManager__factory.connect(
+      portfolioManager.address,
+      keeper
+    );
+  });
+
+  it("Should allow to addOrder", async function () {
+    const linkPrice = await getOrderPrice(
+      priceConsumer,
+      envConfig.mainnet.chainlink.datafeeds.weth,
+      OrderType.BUY
+    );
+
+    await weth.approve(portfolioManager.address, parseEther("0.1"));
+
+    expect(
+      await portfolioManager.addOrder(
+        envConfig.mainnet.tokens.link,
+        OrderType.BUY,
+        linkPrice,
+        parseEther("0.1")
+      )
+    ).to.emit(portfolioManager, "OrderAdded");
+  });
+
+  it("Should executeOrders correctly", async function () {
+    const linkPrice = await getOrderPrice(
+      priceConsumer,
+      envConfig.mainnet.chainlink.datafeeds.weth,
+      OrderType.BUY
+    );
+
+    await weth.approve(portfolioManager.address, parseEther("0.1"));
+
+    await portfolioManager.addOrder(
+      envConfig.mainnet.tokens.link,
+      OrderType.BUY,
+      linkPrice,
+      parseEther("0.1")
+    );
+
+    let balanceBefore = await link.balanceOf(deployer.address);
+
+    const orders = await portfolioManager.getEligibleOrders();
+    await portfolioManager_Keeper.executeOrders(orders);
+
+    expect(await link.balanceOf(deployer.address)).to.be.gt(balanceBefore);
   });
 });

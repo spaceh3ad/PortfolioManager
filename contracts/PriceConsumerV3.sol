@@ -3,7 +3,6 @@ pragma solidity 0.8.16;
 
 import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 import {Objects} from "./Objects.sol";
-import "hardhat/console.sol";
 
 contract PriceConsumerV3 is Objects {
     address[] public supportedAssets;
@@ -21,7 +20,6 @@ contract PriceConsumerV3 is Objects {
             assetToFeedMapping[_assets[i]] = AggregatorV3Interface(
                 _priceFeeds[i]
             );
-            console.log(_assets[i]);
         }
     }
 
@@ -38,11 +36,6 @@ contract PriceConsumerV3 is Objects {
         AssetInfo[] memory assetsInfo = new AssetInfo[](supportedAssets.length);
 
         for (uint256 i = 0; i < supportedAssets.length; i++) {
-            console.log("supportedAsset: ", supportedAssets[i]);
-            console.log(
-                "assetToFeedMapping: ",
-                address(assetToFeedMapping[supportedAssets[i]])
-            );
             assetsInfo[i] = AssetInfo({
                 asset: supportedAssets[i],
                 price: getLatestPrice(
@@ -51,9 +44,7 @@ contract PriceConsumerV3 is Objects {
                     )
                 )
             });
-            console.log(assetsInfo[i].asset);
         }
-        console.log(assetsInfo.length);
         require(assetsInfo.length > 0, "Feed returned no data");
         return assetsInfo;
     }
@@ -70,9 +61,7 @@ contract PriceConsumerV3 is Objects {
         view
         returns (int256)
     {
-        console.log(address(_feed));
         (, int256 price, , , ) = _feed.latestRoundData();
-        console.logInt(price);
         return price;
     }
 }

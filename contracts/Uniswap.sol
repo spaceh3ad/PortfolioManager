@@ -4,7 +4,6 @@ pragma abicoder v2;
 
 import "@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol";
 import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
-import "hardhat/console.sol";
 
 contract Uniswap {
     // https://docs.uniswap.org/protocol/guides/swaps/single-swaps#a-complete-single-swap-contract
@@ -27,7 +26,8 @@ contract Uniswap {
     function swapExactInputSingle(
         uint256 amountIn,
         address tokenIn,
-        address tokenOut
+        address tokenOut,
+        address recipient
     ) public returns (uint256 amountOut) {
         TransferHelper.safeApprove(tokenIn, address(swapRouter), amountIn);
         ISwapRouter.ExactInputSingleParams memory params = ISwapRouter
@@ -35,7 +35,7 @@ contract Uniswap {
                 tokenIn: tokenIn,
                 tokenOut: tokenOut,
                 fee: poolFee,
-                recipient: address(this),
+                recipient: recipient,
                 deadline: block.timestamp + 100,
                 amountIn: amountIn,
                 amountOutMinimum: 0,
@@ -43,6 +43,5 @@ contract Uniswap {
             });
 
         amountOut = swapRouter.exactInputSingle(params);
-        console.log("to poszedl swap mordo");
     }
 }
