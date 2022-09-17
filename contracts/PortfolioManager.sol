@@ -62,24 +62,20 @@ contract PortfolioManager is Objects, AccessControl, Uniswap {
             address(priceConsumer.assetToFeedMapping(_asset)) != address(0),
             "Asset not supported"
         );
-
         address assetToCharge = _orderType == OrderType.BUY ? weth : _asset;
 
-        console.log(IERC20(assetToCharge).allowance(msg.sender, address(this)));
+        require(
+            IERC20(assetToCharge).balanceOf(msg.sender) >= _amount,
+            "Balance too low"
+        );
 
         require(
             IERC20(assetToCharge).allowance(msg.sender, address(this)) >=
                 _amount,
-            "Not allowance"
+            "No allowance"
         );
 
-        bool success = IERC20(assetToCharge).transferFrom(
-            msg.sender,
-            address(this),
-            _amount
-        );
-
-        require(success);
+        IERC20(assetToCharge).transferFrom(msg.sender, address(this), _amount);
 
         orders.push(
             Order({
@@ -118,7 +114,6 @@ contract PortfolioManager is Objects, AccessControl, Uniswap {
                 }
             }
         }
-        console.log("git");
         return counter;
     }
 
@@ -159,8 +154,6 @@ contract PortfolioManager is Objects, AccessControl, Uniswap {
         for (uint256 i = 0; i < _orders.length; i++) {
             address tokenIn;
             address tokenOut;
-            console.log(uint256(orders[i].orderType));
-            console.log(orders[i].asset);
 
             if (orders[i].orderType == OrderType.BUY) {
                 tokenIn = weth;
@@ -169,9 +162,12 @@ contract PortfolioManager is Objects, AccessControl, Uniswap {
                 tokenIn = orders[i].asset;
                 tokenOut = weth;
             }
-            console.log(tokenIn, tokenOut);
-
-            swapExactInputSingle(uint256(orders[i].amount), tokenIn, tokenOut);
+            swapExactInputSingle(
+                uint256(orders[i].amount),
+                tokenIn,
+                tokenOut,
+                orders[i].owner
+            );
         }
     }
 }

@@ -13,6 +13,15 @@ import {
   AggregatorV3Interface,
 } from "../typechain/";
 
-const priceConsumer = await new PriceConsumerV3__factory(deployer).attach(
-  await portfolioManager.priceConsumer()
-);
+async function main() {
+  const portfolioManager = await new PortfolioManager__factory(deployer).deploy(
+
+  const priceConsumer = await new PriceConsumerV3__factory(deployer).attach(
+    await portfolioManager.priceConsumer()
+  );
+}
+
+main().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});

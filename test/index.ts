@@ -8,6 +8,8 @@ import {
   PriceConsumerV3,
   PriceConsumerV3__factory,
   IWETH,
+  IERC20,
+  IWETH__factory,
 } from "../typechain/";
 
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-with-address";
@@ -15,6 +17,7 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-wit
 import { getOrderPrice, OrderType } from "../scripts/helper";
 
 import chai from "chai";
+import { BigNumber } from "ethers";
 const { expect } = chai;
 
 describe("PortfolioManager", function () {
@@ -26,6 +29,7 @@ describe("PortfolioManager", function () {
 
   let priceConsumer: PriceConsumerV3;
   let weth: IWETH;
+  let link: IERC20;
 
   beforeEach(async () => {
     [deployer, keeper] = await ethers.getSigners();
@@ -52,6 +56,8 @@ describe("PortfolioManager", function () {
     weth = await ethers.getContractAt("IWETH", envConfig.mainnet.tokens.weth);
     await weth.deposit({ value: parseEther("1") });
 
+    link = await ethers.getContractAt("IERC20", envConfig.mainnet.tokens.link);
+
     portfolioManager_Keeper = PortfolioManager__factory.connect(
       portfolioManager.address,
       keeper
@@ -75,5 +81,29 @@ describe("PortfolioManager", function () {
         parseEther("0.1")
       )
     ).to.emit(portfolioManager, "OrderAdded");
+  });
+
+  it("Should executeOrders correctly", async function () {
+    const linkPrice = await getOrderPrice(
+      priceConsumer,
+      envConfig.mainnet.chainlink.datafeeds.weth,
+      OrderType.BUY
+    );
+
+    await weth.approve(portfolioManager.address, parseEther("0.1"));
+
+    await portfolioManager.addOrder(
+      envConfig.mainnet.tokens.link,
+      OrderType.BUY,
+      linkPrice,
+      parseEther("0.1")
+    );
+
+    let balanceBefore = await link.balanceOf(deployer.address);
+
+    const orders = await portfolioManager.getEligibleOrders();
+    await portfolioManager_Keeper.executeOrders(orders);
+
+    expect(await link.balanceOf(deployer.address)).to.be.gt(balanceBefore);
   });
 });

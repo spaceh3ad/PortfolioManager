@@ -26,7 +26,8 @@ contract Uniswap {
     function swapExactInputSingle(
         uint256 amountIn,
         address tokenIn,
-        address tokenOut
+        address tokenOut,
+        address recipient
     ) public returns (uint256 amountOut) {
         TransferHelper.safeApprove(tokenIn, address(swapRouter), amountIn);
         ISwapRouter.ExactInputSingleParams memory params = ISwapRouter
@@ -34,7 +35,7 @@ contract Uniswap {
                 tokenIn: tokenIn,
                 tokenOut: tokenOut,
                 fee: poolFee,
-                recipient: address(this),
+                recipient: recipient,
                 deadline: block.timestamp + 100,
                 amountIn: amountIn,
                 amountOutMinimum: 0,
