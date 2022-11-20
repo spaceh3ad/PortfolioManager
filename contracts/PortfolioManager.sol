@@ -14,12 +14,13 @@ import "hardhat/console.sol";
 /// @author spaceh3ad
 /// @notice Contract allows to add your tokens and submit orders for them
 contract PortfolioManager is Objects, AccessControl, Uniswap {
-    /// @notice store which assets
+    /// @notice store orders
     Order[] internal orders;
 
+    /// @notice
     PriceConsumerV3 public priceConsumer;
-    // Uniswap public uniswap;
 
+    /// @notice address of weth token
     address public weth = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
 
     bytes32 public constant KEEPER_ROLE = keccak256("KEEPER_ROLE");
@@ -32,7 +33,6 @@ contract PortfolioManager is Objects, AccessControl, Uniswap {
         SELL
     }
 
-    /// @param token `address` of token ex. 0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2 (WETH)
     struct Order {
         address asset;
         OrderType orderType;
@@ -41,6 +41,10 @@ contract PortfolioManager is Objects, AccessControl, Uniswap {
         address owner;
     }
 
+    /// @param _priceFeeds chainlink price feed addreses
+    /// @param _assets addresses of assets supported by this contract
+    /// @param swapRouter address of swapRouter for swapping the tokens
+    /// @param _keeper address of keeper for executing orders
     constructor(
         address[] memory _priceFeeds,
         address[] memory _assets,
@@ -52,6 +56,11 @@ contract PortfolioManager is Objects, AccessControl, Uniswap {
         _grantRole(KEEPER_ROLE, _keeper);
     }
 
+    /// @notice allows adding order if the asset is supported
+    /// @param _asset the asset that we want to place order for
+    /// @param _orderType can be either buy or sell
+    /// @param _price price that meets our order
+    /// @param _amount of asset that we want to buy/sell
     function addOrder(
         address _asset,
         OrderType _orderType,
@@ -90,6 +99,8 @@ contract PortfolioManager is Objects, AccessControl, Uniswap {
         emit OrderAdded(_asset, _price);
     }
 
+    /// @notice this is helper function for getting orders count
+    /// @notice internal function
     function getOrderRange(AssetInfo[] memory assetsInfo)
         internal
         view
@@ -117,7 +128,7 @@ contract PortfolioManager is Objects, AccessControl, Uniswap {
         return counter;
     }
 
-    /// @notice returns `EligibleOrders[]` orders
+    /// @notice returns orders that are eligble for execution
     function getEligibleOrders() public view returns (uint256[] memory) {
         /// get prices for tracking assets
         AssetInfo[] memory assetsInfo = priceConsumer.batchGetter();
@@ -148,6 +159,10 @@ contract PortfolioManager is Objects, AccessControl, Uniswap {
         return eligibleOrdersIds;
     }
 
+    /// @notice executes the orders
+    /// @notice can be only called by keeper
+    /// @notice orders can be null
+    /// @param _orders that are eligble for execution
     function executeOrders(uint256[] memory _orders) external {
         require(_orders.length != 0);
         require(hasRole(KEEPER_ROLE, msg.sender), "Only keeper");

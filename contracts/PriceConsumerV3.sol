@@ -8,11 +8,9 @@ contract PriceConsumerV3 is Objects {
     address[] public supportedAssets;
 
     /// @dev The assets that this consumer is tracking.
-
-    // TODO fix mapping
     mapping(address => AggregatorV3Interface) public assetToFeedMapping;
 
-    /// @notice save needed pirce feeds addresses
+    /// @notice save needed price feeds addresses
     constructor(address[] memory _priceFeeds, address[] memory _assets) {
         require(_priceFeeds.length == _assets.length, "Data length must match");
         for (uint256 i = 0; i < _assets.length; i++) {
@@ -31,7 +29,8 @@ contract PriceConsumerV3 is Objects {
         supportedAssets.push(_asset);
     }
 
-    /// @notice return array of assets info (asset address, price)
+    /// @notice batch update all prices for supported assets
+    /// @return array of assets info (asset address, price)
     function batchGetter() public view returns (AssetInfo[] memory) {
         AssetInfo[] memory assetsInfo = new AssetInfo[](supportedAssets.length);
 
@@ -49,13 +48,16 @@ contract PriceConsumerV3 is Objects {
         return assetsInfo;
     }
 
+    /// @notice function for retireval of decimals for token
+    /// @param _feed address of data feed
+    /// @return decimals of asset
     function decimals(AggregatorV3Interface _feed) public view returns (uint8) {
         return _feed.decimals();
     }
 
-    /**
-     * Returns the latest price
-     */
+    /// @notice returns the latest price for given feed
+    /// @param _feed address of data feed
+    /// @return price of an asset
     function getLatestPrice(AggregatorV3Interface _feed)
         public
         view
