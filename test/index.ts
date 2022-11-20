@@ -83,7 +83,7 @@ describe("PortfolioManager", function () {
     ).to.emit(portfolioManager, "OrderAdded");
   });
 
-  it("Should executeOrders correctly", async function () {
+  it("Should allow to buy token", async function () {
     const linkPrice = await getOrderPrice(
       priceConsumer,
       envConfig.mainnet.chainlink.datafeeds.weth,
@@ -105,5 +105,29 @@ describe("PortfolioManager", function () {
     await portfolioManager_Keeper.executeOrders(orders);
 
     expect(await link.balanceOf(deployer.address)).to.be.gt(balanceBefore);
+  });
+
+  it("Should allow to sell token", async function () {
+    const linkPrice = await getOrderPrice(
+      priceConsumer,
+      envConfig.mainnet.chainlink.datafeeds.link,
+      OrderType.SELL
+    );
+
+    await link.approve(portfolioManager.address, parseEther("0.1"));
+
+    let balanceBefore = await link.balanceOf(deployer.address);
+
+    await portfolioManager.addOrder(
+      envConfig.mainnet.tokens.link,
+      OrderType.SELL,
+      linkPrice,
+      parseEther("0.1")
+    );
+
+    const orders = await portfolioManager.getEligibleOrders();
+    await portfolioManager_Keeper.executeOrders(orders);
+
+    expect(await link.balanceOf(deployer.address)).to.be.lt(balanceBefore);
   });
 });
