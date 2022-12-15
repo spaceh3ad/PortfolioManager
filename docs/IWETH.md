@@ -4,7 +4,7 @@
 
 
 
-this is contract interface for WETH (wrapped ETH)turn ETH into token
+interfejs dla WETH (tokenu wrapped Ethereum)
 
 
 
@@ -16,7 +16,7 @@ this is contract interface for WETH (wrapped ETH)turn ETH into token
 function approve(address spender, uint256 amount) external nonpayable
 ```
 
-allows approving someone to spend on your behalf
+funckja zezwalająca adresowi na wydanie pewnej ilości tokenów w imieniu osoby wywołującej tą funkcje
 
 
 
@@ -33,7 +33,7 @@ allows approving someone to spend on your behalf
 function deposit() external payable
 ```
 
-deposit ETH to receive WETH
+funkcja do depozytu ETH, która zwraca ekwiwalent w tokenie WETH (zwrapowane ETH)
 
 
 

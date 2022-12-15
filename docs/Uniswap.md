@@ -4,7 +4,7 @@
 
 
 
-
+kontrakt odpowiadający za wymianę tokenów
 
 
 
@@ -33,24 +33,24 @@ function poolFee() external view returns (uint24)
 function swapExactInputSingle(uint256 amountIn, address tokenIn, address tokenOut, address recipient) external nonpayable returns (uint256 amountOut)
 ```
 
-swapExactInputSingle swaps a fixed amount of tokenIn for a maximum possible amount of tokenOut
+funkcja wymieniająca jedne tokeny na drugie
 
-*The calling address must approve this contract to spend at least `amountIn`*
+
 
 #### Parameters
 
 | Name | Type | Description |
 |---|---|---|
-| amountIn | uint256 | The exact amount of tokenIn that will be swapped for tokenOut |
-| tokenIn | address | The token that we pay in |
-| tokenOut | address | The token that will be received |
+| amountIn | uint256 | dokładna ilość tokenu wchodzącego, mającego być zamieniony na token wychodzący |
+| tokenIn | address | token który sprzedajemy |
+| tokenOut | address | token który kupujemy |
 | recipient | address | undefined |
 
 #### Returns
 
 | Name | Type | Description |
 |---|---|---|
-| amountOut | uint256 | The amount of WETH9 received. |
+| amountOut | uint256 | undefined |
 
 ### swapRouter
 

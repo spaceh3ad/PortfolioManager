@@ -4,7 +4,7 @@
 
 
 
-
+kontrakt odpowiadający za dostarczanie informacji o tokenach oraz pozwalający na dodawanie wsparcia dla nowych tokenów
 
 
 
@@ -16,9 +16,9 @@
 function assetToFeedMapping(address) external view returns (contract AggregatorV3Interface)
 ```
 
+hasz mapa adresów tokenów do kontraków dostarczających informacji o ich cenie
 
 
-*The assets that this consumer is tracking.*
 
 #### Parameters
 
@@ -35,10 +35,10 @@ function assetToFeedMapping(address) external view returns (contract AggregatorV
 ### batchGetter
 
 ```solidity
-function batchGetter() external view returns (struct Objects.AssetInfo[])
+function batchGetter() external view returns (struct AssetInfo[])
 ```
 
-batch update all prices for supported assets
+grupowo zaktualizuj infomację o cenach wspieranych tokenów
 
 
 
@@ -47,29 +47,7 @@ batch update all prices for supported assets
 
 | Name | Type | Description |
 |---|---|---|
-| _0 | Objects.AssetInfo[] | array of assets info (asset address, price) |
-
-### decimals
-
-```solidity
-function decimals(contract AggregatorV3Interface _feed) external view returns (uint8)
-```
-
-function for retireval of decimals for token
-
-
-
-#### Parameters
-
-| Name | Type | Description |
-|---|---|---|
-| _feed | contract AggregatorV3Interface | address of data feed |
-
-#### Returns
-
-| Name | Type | Description |
-|---|---|---|
-| _0 | uint8 | decimals of asset |
+| _0 | AssetInfo[] | undefined |
 
 ### getLatestPrice
 
@@ -77,7 +55,7 @@ function for retireval of decimals for token
 function getLatestPrice(contract AggregatorV3Interface _feed) external view returns (int256)
 ```
 
-returns the latest price for given feed
+funkcja zwracająca najnowszą cene
 
 
 
@@ -85,13 +63,13 @@ returns the latest price for given feed
 
 | Name | Type | Description |
 |---|---|---|
-| _feed | contract AggregatorV3Interface | address of data feed |
+| _feed | contract AggregatorV3Interface | adres kontraktu dostarczającego dane o tokenie |
 
 #### Returns
 
 | Name | Type | Description |
 |---|---|---|
-| _0 | int256 | price of an asset |
+| _0 | int256 | undefined |
 
 ### supportedAssets
 

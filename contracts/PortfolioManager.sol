@@ -5,34 +5,35 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 
 import {PriceConsumerV3} from "./PriceConsumerV3.sol";
-import {Objects} from "./Objects.sol";
+import {AssetInfo} from "./Objects.sol";
 import {Uniswap} from "./Uniswap.sol";
-//
-import "hardhat/console.sol";
 
-/// @title PortfoliManager order executor
-/// @author spaceh3ad
-/// @notice Contract allows to add your tokens and submit orders for them
-contract PortfolioManager is Objects, AccessControl, Uniswap {
-    /// @notice store orders
+/// @title Menadżer Portfolia
+/// @author Jan KwiatkowskiswapExactInputSingle
+/// @notice inteligentny kontrakt pozwalający na składanie zleceń na dane tokeny
+contract PortfolioManager is AccessControl, Uniswap {
+    /// @notice tablica zleceń
     Order[] internal orders;
 
-    /// @notice
+    /// @notice kontrakt dostarczajacy dane o cenach tokenów
     PriceConsumerV3 public priceConsumer;
 
-    /// @notice address of weth token
+    /// @notice adres tokenu Wrapped Ethereum
     address public weth = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
 
+    /// @notice hasz roli KEEPER_ROLE
     bytes32 public constant KEEPER_ROLE = keccak256("KEEPER_ROLE");
 
+    /// @notice event dla dodania zlecenia
     event OrderAdded(address indexed _asset, int256 price);
 
-    /// @notice store assets prices
+    /// @notice enumeracja typów zleceń
     enum OrderType {
         BUY,
         SELL
     }
 
+    /// @notice struktura zlecenia
     struct Order {
         address asset;
         OrderType orderType;
@@ -41,10 +42,11 @@ contract PortfolioManager is Objects, AccessControl, Uniswap {
         address owner;
     }
 
-    /// @param _priceFeeds chainlink price feed addreses
-    /// @param _assets addresses of assets supported by this contract
-    /// @param swapRouter address of swapRouter for swapping the tokens
-    /// @param _keeper address of keeper for executing orders
+    /// @notice konstruktor inicjalizujący wspierane tokeny, dostarczycieli danych o cenie tych tokenów oraz kotrakt do wymiany tokenów (Uniswap)
+    /// @param _priceFeeds adresy kontraktów dostarczających dane o cenach tokenów
+    /// @param _assets adresy wspierancych tokenów
+    /// @param swapRouter adres routera do wymiany tokenów
+    /// @param _keeper adres keepera do wykonywania zleceń
     constructor(
         address[] memory _priceFeeds,
         address[] memory _assets,
@@ -56,11 +58,11 @@ contract PortfolioManager is Objects, AccessControl, Uniswap {
         _grantRole(KEEPER_ROLE, _keeper);
     }
 
-    /// @notice allows adding order if the asset is supported
-    /// @param _asset the asset that we want to place order for
-    /// @param _orderType can be either buy or sell
-    /// @param _price price that meets our order
-    /// @param _amount of asset that we want to buy/sell
+    /// @notice funkcja pozwalająca na dodawanie zleceń
+    /// @param _asset adres tokenu którego dotyczy zlecenie
+    /// @param _orderType typ zlecenia kupno/sprzedaż
+    /// @param _price cena realizacji zlecenia
+    /// @param _amount ilość tokenów które chcemy kupić/sprzedać
     function addOrder(
         address _asset,
         OrderType _orderType,
@@ -99,13 +101,10 @@ contract PortfolioManager is Objects, AccessControl, Uniswap {
         emit OrderAdded(_asset, _price);
     }
 
-    /// @notice this is helper function for getting orders count
-    /// @notice internal function
-    function getOrderRange(AssetInfo[] memory assetsInfo)
-        internal
-        view
-        returns (uint256)
-    {
+    /// @notice funkcja pomocnicza zwracająca ilość zleceń
+    function getOrderRange(
+        AssetInfo[] memory assetsInfo
+    ) internal view returns (uint256) {
         uint256 counter = 0;
         for (uint256 i = 0; i < assetsInfo.length; i++) {
             address asset = assetsInfo[i].asset;
@@ -128,7 +127,7 @@ contract PortfolioManager is Objects, AccessControl, Uniswap {
         return counter;
     }
 
-    /// @notice returns orders that are eligble for execution
+    /// @notice zwraca zlecenia które kwalifikuja się do wykonania
     function getEligibleOrders() public view returns (uint256[] memory) {
         /// get prices for tracking assets
         AssetInfo[] memory assetsInfo = priceConsumer.batchGetter();
@@ -159,10 +158,8 @@ contract PortfolioManager is Objects, AccessControl, Uniswap {
         return eligibleOrdersIds;
     }
 
-    /// @notice executes the orders
-    /// @notice can be only called by keeper
-    /// @notice orders can be null
-    /// @param _orders that are eligble for execution
+    /// @notice funkcja wykonująca zlecenia przekazane w tabeli
+    /// @param _orders zlecenia kwalifikujące się do wykonania
     function executeOrders(uint256[] memory _orders) external {
         require(_orders.length != 0);
         require(hasRole(KEEPER_ROLE, msg.sender), "Only keeper");

@@ -1,3 +1,4 @@
+/* eslint-disable camelcase */
 import { ethers } from "hardhat";
 import { parseEther } from "ethers/lib/utils";
 
@@ -9,7 +10,6 @@ import {
   PriceConsumerV3__factory,
   IWETH,
   IERC20,
-  IWETH__factory,
 } from "../typechain/";
 
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-with-address";
@@ -17,7 +17,6 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-wit
 import { getOrderPrice, OrderType } from "../scripts/helper";
 
 import chai from "chai";
-import { BigNumber } from "ethers";
 const { expect } = chai;
 
 describe("PortfolioManager", function () {
@@ -25,7 +24,7 @@ describe("PortfolioManager", function () {
   let keeper: SignerWithAddress;
 
   let portfolioManager: PortfolioManager;
-  let portfolioManager_Keeper: PortfolioManager;
+  let portfolioManagerKeeper: PortfolioManager;
 
   let priceConsumer: PriceConsumerV3;
   let weth: IWETH;
@@ -58,7 +57,7 @@ describe("PortfolioManager", function () {
 
     link = await ethers.getContractAt("IERC20", envConfig.mainnet.tokens.link);
 
-    portfolioManager_Keeper = PortfolioManager__factory.connect(
+    portfolioManagerKeeper = PortfolioManager__factory.connect(
       portfolioManager.address,
       keeper
     );
@@ -102,7 +101,7 @@ describe("PortfolioManager", function () {
     let balanceBefore = await link.balanceOf(deployer.address);
 
     const orders = await portfolioManager.getEligibleOrders();
-    await portfolioManager_Keeper.executeOrders(orders);
+    await portfolioManagerKeeper.executeOrders(orders);
 
     expect(await link.balanceOf(deployer.address)).to.be.gt(balanceBefore);
   });
@@ -126,7 +125,7 @@ describe("PortfolioManager", function () {
     );
 
     const orders = await portfolioManager.getEligibleOrders();
-    await portfolioManager_Keeper.executeOrders(orders);
+    await portfolioManagerKeeper.executeOrders(orders);
 
     expect(await link.balanceOf(deployer.address)).to.be.lt(balanceBefore);
   });

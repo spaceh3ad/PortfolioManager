@@ -1,10 +1,10 @@
 # PortfolioManager
 
-*spaceh3ad*
+*Jan KwiatkowskiswapExactInputSingle*
 
-> PortfoliManager order executor
+> Menadżer Portfolia
 
-Contract allows to add your tokens and submit orders for them
+inteligentny kontrakt pozwalający na składanie zleceń na dane tokeny
 
 
 
@@ -33,7 +33,7 @@ function DEFAULT_ADMIN_ROLE() external view returns (bytes32)
 function KEEPER_ROLE() external view returns (bytes32)
 ```
 
-
+hasz roli KEEPER_ROLE
 
 
 
@@ -50,7 +50,7 @@ function KEEPER_ROLE() external view returns (bytes32)
 function addOrder(address _asset, enum PortfolioManager.OrderType _orderType, int256 _price, uint256 _amount) external nonpayable
 ```
 
-allows adding order if the asset is supported
+funkcja pozwalająca na dodawanie zleceń
 
 
 
@@ -58,10 +58,10 @@ allows adding order if the asset is supported
 
 | Name | Type | Description |
 |---|---|---|
-| _asset | address | the asset that we want to place order for |
-| _orderType | enum PortfolioManager.OrderType | can be either buy or sell |
-| _price | int256 | price that meets our order |
-| _amount | uint256 | of asset that we want to buy/sell |
+| _asset | address | adres tokenu którego dotyczy zlecenie |
+| _orderType | enum PortfolioManager.OrderType | typ zlecenia kupno/sprzedaż |
+| _price | int256 | cena realizacji zlecenia |
+| _amount | uint256 | ilość tokenów które chcemy kupić/sprzedać |
 
 ### executeOrders
 
@@ -69,7 +69,7 @@ allows adding order if the asset is supported
 function executeOrders(uint256[] _orders) external nonpayable
 ```
 
-executes the orderscan be only called by keeperorders can be null
+funkcja wykonująca zlecenia przekazane w tabeli
 
 
 
@@ -77,7 +77,7 @@ executes the orderscan be only called by keeperorders can be null
 
 | Name | Type | Description |
 |---|---|---|
-| _orders | uint256[] | that are eligble for execution |
+| _orders | uint256[] | zlecenia kwalifikujące się do wykonania |
 
 ### getEligibleOrders
 
@@ -85,7 +85,7 @@ executes the orderscan be only called by keeperorders can be null
 function getEligibleOrders() external view returns (uint256[])
 ```
 
-returns orders that are eligble for execution
+zwraca zlecenia które kwalifikuja się do wykonania
 
 
 
@@ -181,7 +181,7 @@ function poolFee() external view returns (uint24)
 function priceConsumer() external view returns (contract PriceConsumerV3)
 ```
 
-
+kontrakt dostarczajacy dane o cenach tokenów
 
 
 
@@ -254,24 +254,24 @@ function supportsInterface(bytes4 interfaceId) external view returns (bool)
 function swapExactInputSingle(uint256 amountIn, address tokenIn, address tokenOut, address recipient) external nonpayable returns (uint256 amountOut)
 ```
 
-swapExactInputSingle swaps a fixed amount of tokenIn for a maximum possible amount of tokenOut
+funkcja wymieniająca jedne tokeny na drugie
 
-*The calling address must approve this contract to spend at least `amountIn`*
+
 
 #### Parameters
 
 | Name | Type | Description |
 |---|---|---|
-| amountIn | uint256 | The exact amount of tokenIn that will be swapped for tokenOut |
-| tokenIn | address | The token that we pay in |
-| tokenOut | address | The token that will be received |
+| amountIn | uint256 | dokładna ilość tokenu wchodzącego, mającego być zamieniony na token wychodzący |
+| tokenIn | address | token który sprzedajemy |
+| tokenOut | address | token który kupujemy |
 | recipient | address | undefined |
 
 #### Returns
 
 | Name | Type | Description |
 |---|---|---|
-| amountOut | uint256 | The amount of WETH9 received. |
+| amountOut | uint256 | undefined |
 
 ### swapRouter
 
@@ -296,7 +296,7 @@ function swapRouter() external view returns (contract ISwapRouter)
 function weth() external view returns (address)
 ```
 
-address of weth token
+adres tokenu Wrapped Ethereum
 
 
 
@@ -317,7 +317,7 @@ address of weth token
 event OrderAdded(address indexed _asset, int256 price)
 ```
 
-
+event dla dodania zlecenia
 
 
 
