@@ -5,15 +5,15 @@ const envConfig = {
     },
     chainlink: {
       datafeeds: {
-        weth: "0x5f4ec3df9cbd43714fe2740f5e3616155c5b8419",
-        link: "0x2c1d072e956affc0d435cb7ac38ef18d24d9127c",
-        btc: "0xf4030086522a5beea4988f8ca5b36dbc97bee88c",
+        weth: "0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419",
+        link: "0x2c1d072e956AFFC0D435Cb7AC38EF18d24d9127c",
+        btc: "0xF4030086522a5bEEa4988F8cA5B36dbC97BeE88c",
       },
     },
     tokens: {
-      weth: "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
-      link: "0x514910771af9ca656af840dff83e8264ecf986ca",
-      btc: "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
+      weth: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+      link: "0x514910771AF9Ca656af840dff83E8264EcF986CA",
+      btc: "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
     },
   },
 };

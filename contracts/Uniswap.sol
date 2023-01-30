@@ -5,24 +5,22 @@ pragma abicoder v2;
 import "@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol";
 import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 
+/// @notice kontrakt odpowiadający za wymianę tokenów
 contract Uniswap {
     // https://docs.uniswap.org/protocol/guides/swaps/single-swaps#a-complete-single-swap-contract
 
     ISwapRouter public immutable swapRouter;
 
-    // For this example, we will set the pool fee to 0.3%.
-    uint24 public constant poolFee = 3000;
+    uint24 public constant POOL_FEE = 3000;
 
     constructor(address _swapRouter) {
         swapRouter = ISwapRouter(_swapRouter);
     }
 
-    /// @notice swapExactInputSingle swaps a fixed amount of tokenIn for a maximum possible amount of tokenOut
-    /// @dev The calling address must approve this contract to spend at least `amountIn`
-    /// @param amountIn The exact amount of tokenIn that will be swapped for tokenOut
-    /// @param tokenIn The token that we pay in
-    /// @param tokenOut The token that will be received
-    /// @return amountOut The amount of WETH9 received.
+    /// @notice funkcja wymieniająca jedne tokeny na drugie
+    /// @param amountIn dokładna ilość tokenu wchodzącego, mającego być zamieniony na token wychodzący
+    /// @param tokenIn token który sprzedajemy
+    /// @param tokenOut token który kupujemy
     function swapExactInputSingle(
         uint256 amountIn,
         address tokenIn,
@@ -34,7 +32,7 @@ contract Uniswap {
             .ExactInputSingleParams({
                 tokenIn: tokenIn,
                 tokenOut: tokenOut,
-                fee: poolFee,
+                fee: POOL_FEE,
                 recipient: recipient,
                 deadline: block.timestamp + 100,
                 amountIn: amountIn,
