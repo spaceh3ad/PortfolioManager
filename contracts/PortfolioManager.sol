@@ -2,14 +2,13 @@
 pragma solidity 0.8.16;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
-
 import {PriceConsumerV3} from "./PriceConsumerV3.sol";
 import {AssetInfo} from "./Objects.sol";
 import {Uniswap} from "./Uniswap.sol";
+import {AccessControl} from "./AccessControl.sol";
 
 /// @title Menadżer Portfolia
-/// @author Jan KwiatkowskiswapExactInputSingle
+/// @author Jan Kwiatkowski
 /// @notice inteligentny kontrakt pozwalający na składanie zleceń na dane tokeny
 contract PortfolioManager is AccessControl, Uniswap {
     /// @notice tablica zleceń
@@ -19,10 +18,7 @@ contract PortfolioManager is AccessControl, Uniswap {
     PriceConsumerV3 public priceConsumer;
 
     /// @notice adres tokenu Wrapped Ethereum
-    address public weth = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
-
-    /// @notice hasz roli KEEPER_ROLE
-    bytes32 public constant KEEPER_ROLE = keccak256("KEEPER_ROLE");
+    address constant WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
 
     /// @notice event dla dodania zlecenia
     event OrderAdded(address indexed _asset, int256 price);
@@ -45,17 +41,15 @@ contract PortfolioManager is AccessControl, Uniswap {
     /// @notice konstruktor inicjalizujący wspierane tokeny, dostarczycieli danych o cenie tych tokenów oraz kotrakt do wymiany tokenów (Uniswap)
     /// @param _priceFeeds adresy kontraktów dostarczających dane o cenach tokenów
     /// @param _assets adresy wspierancych tokenów
-    /// @param swapRouter adres routera do wymiany tokenów
+    /// @param _swapRouter adres routera do wymiany tokenów
     /// @param _keeper adres keepera do wykonywania zleceń
     constructor(
         address[] memory _priceFeeds,
         address[] memory _assets,
-        address swapRouter,
+        address _swapRouter,
         address _keeper
-    ) Uniswap(swapRouter) {
+    ) Uniswap(_swapRouter) AccessControl(msg.sender, _keeper) {
         priceConsumer = new PriceConsumerV3(_priceFeeds, _assets);
-        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        _grantRole(KEEPER_ROLE, _keeper);
     }
 
     /// @notice funkcja pozwalająca na dodawanie zleceń
@@ -68,12 +62,12 @@ contract PortfolioManager is AccessControl, Uniswap {
         OrderType _orderType,
         int256 _price,
         uint256 _amount
-    ) external {
+    ) external onlyAdmin {
         require(
             address(priceConsumer.assetToFeedMapping(_asset)) != address(0),
             "Asset not supported"
         );
-        address assetToCharge = _orderType == OrderType.BUY ? weth : _asset;
+        address assetToCharge = _orderType == OrderType.BUY ? WETH : _asset;
 
         require(
             IERC20(assetToCharge).balanceOf(msg.sender) >= _amount,
@@ -86,7 +80,18 @@ contract PortfolioManager is AccessControl, Uniswap {
             "No allowance"
         );
 
-        IERC20(assetToCharge).transferFrom(msg.sender, address(this), _amount);
+        (bool success, bytes memory data) = assetToCharge.call(
+            abi.encodeWithSelector(
+                0x23b872dd,
+                msg.sender,
+                address(this),
+                _amount
+            )
+        );
+        require(
+            success && (data.length == 0 || abi.decode(data, (bool))),
+            "TRANSFER_FAILED"
+        );
 
         orders.push(
             Order({
@@ -128,7 +133,7 @@ contract PortfolioManager is AccessControl, Uniswap {
     }
 
     /// @notice zwraca zlecenia które kwalifikuja się do wykonania
-    function getEligibleOrders() public view returns (uint256[] memory) {
+    function getEligibleOrders() external view returns (uint256[] memory) {
         /// get prices for tracking assets
         AssetInfo[] memory assetsInfo = priceConsumer.batchGetter();
         uint256[] memory eligibleOrdersIds = new uint256[](
@@ -160,19 +165,18 @@ contract PortfolioManager is AccessControl, Uniswap {
 
     /// @notice funkcja wykonująca zlecenia przekazane w tabeli
     /// @param _orders zlecenia kwalifikujące się do wykonania
-    function executeOrders(uint256[] memory _orders) external {
+    function executeOrders(uint256[] memory _orders) external onlyKeeper {
         require(_orders.length != 0);
-        require(hasRole(KEEPER_ROLE, msg.sender), "Only keeper");
         for (uint256 i = 0; i < _orders.length; i++) {
             address tokenIn;
             address tokenOut;
 
             if (orders[i].orderType == OrderType.BUY) {
-                tokenIn = weth;
+                tokenIn = WETH;
                 tokenOut = orders[i].asset;
             } else {
                 tokenIn = orders[i].asset;
-                tokenOut = weth;
+                tokenOut = WETH;
             }
             swapExactInputSingle(
                 uint256(orders[i].amount),

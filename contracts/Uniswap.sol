@@ -11,7 +11,7 @@ contract Uniswap {
 
     ISwapRouter public immutable swapRouter;
 
-    uint24 public constant poolFee = 3000;
+    uint24 public constant POOL_FEE = 3000;
 
     constructor(address _swapRouter) {
         swapRouter = ISwapRouter(_swapRouter);
@@ -32,7 +32,7 @@ contract Uniswap {
             .ExactInputSingleParams({
                 tokenIn: tokenIn,
                 tokenOut: tokenOut,
-                fee: poolFee,
+                fee: POOL_FEE,
                 recipient: recipient,
                 deadline: block.timestamp + 100,
                 amountIn: amountIn,

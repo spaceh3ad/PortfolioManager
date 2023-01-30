@@ -4,7 +4,7 @@
 
 
 
-kontrakt odpowiadający za dostarczanie informacji o tokenach oraz pozwalający na dodawanie wsparcia dla nowych tokenów
+kontrakt odpowiadający za dostarczanie informacji o tokenach
 
 
 

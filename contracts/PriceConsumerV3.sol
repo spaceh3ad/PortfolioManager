@@ -4,7 +4,7 @@ pragma solidity 0.8.16;
 import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 import {AssetInfo} from "./Objects.sol";
 
-/// @notice kontrakt odpowiadający za dostarczanie informacji o tokenach oraz pozwalający na dodawanie wsparcia dla nowych tokenów
+/// @notice kontrakt odpowiadający za dostarczanie informacji o tokenach
 contract PriceConsumerV3 {
     address[] public supportedAssets;
 
@@ -15,7 +15,6 @@ contract PriceConsumerV3 {
     /// @param _priceFeeds adresy kontraktów dostarczających dane o cenach tokenów
     /// @param _assets adresy wspierancych tokenów
     constructor(address[] memory _priceFeeds, address[] memory _assets) {
-        require(_priceFeeds.length == _assets.length, "Data length must match");
         for (uint256 i = 0; i < _assets.length; i++) {
             supportedAssets.push(_assets[i]);
             assetToFeedMapping[_assets[i]] = AggregatorV3Interface(
@@ -25,7 +24,7 @@ contract PriceConsumerV3 {
     }
 
     /// @notice grupowo zaktualizuj infomację o cenach wspieranych tokenów
-    function batchGetter() public view returns (AssetInfo[] memory) {
+    function batchGetter() external view returns (AssetInfo[] memory) {
         AssetInfo[] memory assetsInfo = new AssetInfo[](supportedAssets.length);
 
         for (uint256 i = 0; i < supportedAssets.length; i++) {
@@ -38,7 +37,6 @@ contract PriceConsumerV3 {
                 )
             });
         }
-        require(assetsInfo.length > 0, "Feed returned no data");
         return assetsInfo;
     }
 

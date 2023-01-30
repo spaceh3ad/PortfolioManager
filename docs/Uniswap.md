@@ -10,10 +10,10 @@ kontrakt odpowiadający za wymianę tokenów
 
 ## Methods
 
-### poolFee
+### POOL_FEE
 
 ```solidity
-function poolFee() external view returns (uint24)
+function POOL_FEE() external view returns (uint24)
 ```
 
 
